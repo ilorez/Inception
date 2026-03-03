@@ -1,0 +1,36 @@
+version: '3'
+
+services:
+  mariadb:
+    image: mariadb_test
+    networks:
+      - inception
+    volumes:
+      - db_data:/var/lib/mysql
+
+  wordpress:
+    image: wordpress_test
+    networks:
+      - inception
+    volumes:
+      - wordpress_data:/var/www/html
+    depends_on:
+      - mariadb
+
+  nginx:
+    image: nginx_test
+    ports:
+      - "443:443"
+    networks:
+      - inception
+    volumes:
+      - wordpress_data:/var/www/html
+    depends_on:
+      - wordpress
+
+networks:
+  inception:
+
+volumes:
+  db_data:
+  wordpress_data:
