@@ -19,17 +19,37 @@ RUN apt-get update && apt-get install -y curl ca-certificates lsb-release \
     && ln -s /usr/bin/php8.4 /usr/bin/php \
     && rm -rf /var/lib/apt/lists/*
 
+# delete inded files (apt-get update - a catalog of all available packages, their versions) from RUN snapshots that reduce layer size by 50 to 100 MB
+
+
+
+# Download WordPress
+# wget -q https://wordpress.org/latest.tar.gz -P /tmp
+# tar -xzf /tmp/latest.tar.gz -C /var/www/
+# mkdir -p /var/www/html
+# mv /var/www/wordpress/* /var/www/html/
+
+RUN mkdir -p /var/www/html && \
+    curl -o /tmp/latest.tar.gz https://wordpress.org/latest.tar.gz && \
+    tar -xzf /tmp/latest.tar.gz -C /var/www/ && \
+    mv /var/www/wordpress/* /var/www/html/ && \
+    rm -rf /tmp/latest.tar.gz
+
+
 # Download WP-CLI
 RUN curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar && \
   chmod +x wp-cli.phar && \
   mv wp-cli.phar /usr/local/bin/wp
 
-# delete inded files (apt-get update - a catalog of all available packages, their versions) from RUN snapshots that reduce layer size by 50 to 100 MB
 
-RUN sed -i 's|listen = /run/php/php7.4-fpm.sock|listen = 0.0.0.0:9000|' /etc/php/7.4/fpm/pool.d/www.conf
+
+# Configure PHP-FPM to listen on port 9000 instead of the default Unix socket
+RUN sed -i 's|listen = /run/php/php8.4-fpm.sock|listen = 0.0.0.0:9000|' /etc/php/8.4/fpm/pool.d/www.conf
 
 COPY tools/init.sh /init.sh
 RUN chmod +x /init.sh
-EXPOSE 9000
+
+# in case of using docker-compose, and network wp_network bridge internal, the port 9000 is not needed to be exposed, but if you want to run the container directly, you need to expose it to access it from outside the container
+# EXPOSE 9000
 
 ENTRYPOINT ["/init.sh"]
