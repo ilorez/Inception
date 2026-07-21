@@ -14,6 +14,18 @@ services:
     networks:
       - wp_network
     restart: always
+  wodpress:
+    hostname: wordpress
+    build: ./requirements/wordpress
+    container_name: wordpress
+    volumes:
+      - wordpress_data:/var/www/html
+    networks:
+      - wp_network
+    restart: always
+    env_file:
+      - path: ./.env
+        required: true # default
 
 networks:
   wp_network:
@@ -23,6 +35,7 @@ networks:
 
 volumes:
   mariadb_data:
+  wordpress_data:
 
 secrets:
   db_root_password:
