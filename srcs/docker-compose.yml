@@ -1,0 +1,32 @@
+services:
+  mariadb:
+    secrets:
+      - db_root_password
+      - db_password
+    build: ./requirements/mariadb
+    container_name: mariadb
+    restart: always
+    env_file:
+      - path: ./.env
+        required: true # default 
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    networks:
+      - wp_network
+
+
+networks:
+  wp_network:
+    driver: bridge
+    internal: true
+    name: wp_network
+
+
+volumes:
+  mariadb_data:
+
+secrets:
+  db_root_password:
+    file: ../secrets/db_root_password.txt
+  db_password:
+    file: ../secrets/db_password.txt
