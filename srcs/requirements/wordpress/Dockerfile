@@ -1,6 +1,6 @@
 FROM debian:bullseye
 
-RUN apt-get update && apt-get install -y curl ca-certificates lsb-release \
+RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates lsb-release \
     && curl -sSL https://packages.sury.org/php/apt.gpg -o /usr/share/keyrings/sury-php.gpg \
     && echo "deb [signed-by=/usr/share/keyrings/sury-php.gpg] https://packages.sury.org/php/ $(lsb_release -sc) main" \
        > /etc/apt/sources.list.d/sury-php.list \
@@ -15,8 +15,7 @@ RUN apt-get update && apt-get install -y curl ca-certificates lsb-release \
     php8.4-mbstring \
     php8.4-zip \
     php8.4-exif \
-    imagemagick \
-    && ln -s /usr/bin/php8.4 /usr/bin/php \
+    && ln -sf /usr/bin/php8.4 /usr/bin/php \
     && rm -rf /var/lib/apt/lists/*
 
 # delete inded files (apt-get update - a catalog of all available packages, their versions) from RUN snapshots that reduce layer size by 50 to 100 MB
@@ -50,6 +49,6 @@ COPY tools/init.sh /init.sh
 RUN chmod +x /init.sh
 
 # in case of using docker-compose, and network wp_network bridge internal, the port 9000 is not needed to be exposed, but if you want to run the container directly, you need to expose it to access it from outside the container
-# EXPOSE 9000
+EXPOSE 9000
 
 ENTRYPOINT ["/init.sh"]

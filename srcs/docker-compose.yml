@@ -16,6 +16,9 @@ services:
     restart: always
   wodpress:
     hostname: wordpress
+    secrets:
+      - db_root_password
+      - db_password
     build: ./requirements/wordpress
     container_name: wordpress
     volumes:
@@ -26,12 +29,16 @@ services:
     env_file:
       - path: ./.env
         required: true # default
+    depends_on:
+      - mariadb
 
 networks:
   wp_network:
     driver: bridge
     internal: true
     name: wp_network
+  bridge:
+    driver: bridge
 
 volumes:
   mariadb_data:
