@@ -44,6 +44,8 @@ services:
       - wp_network
       - bridge
     restart: always
+    volumes:
+      - wordpress_data:/var/www/html
     depends_on:
       - wordpress
 
@@ -57,7 +59,17 @@ networks:
 
 volumes:
   mariadb_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: /home/$USERNAME/data/mariadb_data
+      o: bind
   wordpress_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: /home/$USERNAME/data/wordpress_data
+      o: bind
 
 secrets:
   db_root_password:
