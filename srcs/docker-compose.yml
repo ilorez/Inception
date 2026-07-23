@@ -14,7 +14,7 @@ services:
     networks:
       - wp_network
     restart: always
-  wodpress:
+  wordpress:
     hostname: wordpress
     secrets:
       - db_root_password
@@ -31,6 +31,21 @@ services:
         required: true # default
     depends_on:
       - mariadb
+  nginx:
+    hostname: nginx
+    build: ./requirements/nginx
+    container_name: nginx
+    env_file:
+      - path: ./.env
+        required: true
+    ports:
+      - "443:443"
+    networks:
+      - wp_network
+      - bridge
+    restart: always
+    depends_on:
+      - wordpress
 
 networks:
   wp_network:
