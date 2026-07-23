@@ -36,5 +36,5 @@ restart: stop start
 rebuild: fclean all
 
 
-.PHONY: all start stop clean fclean prepare restart rebuild up down
+.PHONY: all start stop clean fclean prepare restart rebuild up down clean_volumes
 
