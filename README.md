@@ -1,77 +1,420 @@
-*This project has been created as part of the 42 curriculum by znajdaou.*
+# *This project has been created as part of the 42 curriculum by znajdaou.*
 
 # Inception
 
-## Description
+> A Docker-based infrastructure project that deploys a complete WordPress website using **NGINX**, **WordPress (PHP-FPM)**, and **MariaDB**, with each service running inside its own container.
 
-Inception is a System Administration project from the 42 core curriculum. The goal is to build a small, containerized infrastructure with Docker Compose: every service runs in its own container, built from a custom Dockerfile — no pre-built service images, no `latest` tags — and the whole stack comes up with a single command.
+---
 
-The infrastructure serves a WordPress site backed by a MariaDB database, exposed over HTTPS through an NGINX reverse proxy, the only container reachable from outside. Passwords never live in the images, the compose file, or version control — they're injected through Docker secrets — and both the WordPress files and the database are persisted on the host so no data is lost when a container restarts.
+# Description
 
-## Instructions
+**Inception** is a system administration project from the **42 Network** that introduces containerization with Docker.
 
-### Prerequisites
-- Docker Engine and the Docker Compose plugin
-- `make`
-- Developed and evaluated inside a Debian 12 VM, as required by the subject — any Linux host with Docker works the same way
+The objective is to build a small infrastructure composed of multiple services communicating through Docker networks while following good practices such as:
 
-### Setup
-1. Clone the repository.
-2. Copy `srcs/.env.example` to `srcs/.env` and fill in the non-sensitive values (domain, DB name/user, WordPress site title, admin email, etc.).
-3. Create the secret files expected under `secrets/` — one value per file, plain text, no trailing newline (`db_root_password.txt`, `db_password.txt`, `wp_admin_password.txt`).
-4. Add the domain to your hosts file: `127.0.0.1  znajdaou.42.fr` in `/etc/hosts`.
+* One process per container
+* Container isolation
+* Persistent data using Docker volumes
+* Secure password management using Docker Secrets
+* Automatic service initialization
+* HTTPS support using NGINX
 
-### Build and run
+Instead of using pre-built images, every service is built from a custom Dockerfile based on **Debian Bullseye**.
+
+---
+
+# Project Architecture
+
 ```
+                     Internet
+                         │
+                    HTTPS (443)
+                         │
+                   +-------------+
+                   |    NGINX    |
+                   | TLS Reverse |
+                   |    Proxy    |
+                   +-------------+
+                         │
+                  Internal Network
+                         │
+                   +-------------+
+                   | WordPress   |
+                   |  PHP-FPM    |
+                   +-------------+
+                         │
+                  Internal Network
+                         │
+                   +-------------+
+                   |  MariaDB    |
+                   +-------------+
+
+```
+
+Only **NGINX** is exposed to the host.
+
+WordPress and MariaDB communicate only through an internal Docker network.
+
+---
+
+# Services
+
+## NGINX
+
+* Reverse proxy
+* Handles HTTPS connections
+* Generates a self-signed TLS certificate on startup
+* Serves the WordPress website
+* Forwards PHP requests to PHP-FPM
+
+---
+
+## WordPress
+
+* Runs with PHP-FPM 8.4
+* Downloads the latest WordPress version automatically
+* Installs WP-CLI
+* Creates `wp-config.php`
+* Automatically installs WordPress
+* Creates the administrator account
+* Creates a second WordPress user
+* Waits until MariaDB is ready before starting
+
+---
+
+## MariaDB
+
+* Initializes the database only on first startup
+* Creates the WordPress database
+* Creates the application user
+* Sets the root password
+* Removes anonymous users
+* Stores all database files inside a persistent Docker volume
+
+---
+
+# Repository Structure
+
+```
+.
+├── Makefile
+├── README.md
+├── USER_DOC.md
+├── DEV_DOC.md
+├── secrets/
+│
+└── srcs/
+    ├── docker-compose.yml
+    ├── .env
+    │
+    └── requirements/
+        ├── mariadb/
+        ├── nginx/
+        ├── wordpress/
+        └── bonus/
+```
+
+---
+
+# Instructions
+
+## Clone the repository
+
+```bash
+git clone <repository_url>
+cd inception
+```
+
+## Configure secrets
+
+Create the required secret files inside:
+
+```
+secrets/
+```
+
+Example:
+
+```
+db_password.txt
+db_root_password.txt
+```
+
+Update the `.env` file if necessary.
+
+---
+
+## Build and start
+
+```bash
 make
 ```
-This builds every image and starts the stack in the background. Then visit:
+
+---
+
+## Stop
+
+```bash
+make stop
 ```
-https://znajdaou.42.fr
+
+---
+
+## Start existing containers
+
+```bash
+make start
 ```
 
-### Stop and clean up
-- `make down` — stop and remove the containers
-- `make clean` — `down`, plus remove the built images and the Docker network
-- `make fclean` — full clean, also wipes the persisted data under `~/data`
-- `make re` — `fclean` followed by a full rebuild
-- `make restart` — stop and start the stack again, without rebuilding
-- `make clean_volumes` — remove the persisted data under `~/data` without touching the containers or images
-- `make start` — start the stack again after a `make stop`
-- `make stop` — stop the stack without removing the containers
+---
 
-## Architecture & Design Choices
+## Remove containers
 
-All the infrastructure lives under `srcs/`: a `docker-compose.yml` and one subfolder per service under `srcs/requirements/` (`nginx/`, `wordpress/`, `mariadb/`), each with its own `Dockerfile`, config files, and entrypoint script. Every image is built from scratch — no pre-built service images and no `latest` tag anywhere — and each container runs a single foreground process, restarting automatically if it crashes.
+```bash
+make down
+```
 
-Main design choices:
-- NGINX is the only container exposed to the host, on port 443, TLSv1.2/1.3 only — the single entry point to the whole stack.
-- WordPress runs as PHP-FPM only, with no bundled web server; NGINX proxies PHP requests to it over the internal Docker network.
-- WordPress's install and configuration (database connection, admin account, site URL) are automated with WP-CLI in the entrypoint, so the site is ready as soon as the stack starts — no manual setup wizard.
-- MariaDB only initializes the database on first boot; on every later start it detects the existing data and skips straight to serving it.
+---
 
-### Virtual Machines vs Docker
-A VM virtualizes a whole machine — its own kernel, drivers, OS — through a hypervisor: fully isolated, but heavy, with a boot time measured in minutes and gigabytes of overhead per instance. A Docker container shares the host's kernel and only packages the application and its dependencies, so it starts in milliseconds and uses a fraction of the resources. That's why this project runs NGINX, WordPress, and MariaDB as three containers rather than three VMs: they need to be isolated from each other, not isolated from the hardware.
+## Remove containers and volumes
 
-### Secrets vs Environment Variables
-Environment variables set in `docker-compose.yml` or `.env` are readable by anyone with access to `docker inspect`, the container's process list, or the compose file itself — fine for non-sensitive config like a domain name, not for passwords. Docker secrets are instead mounted as files under `/run/secrets/` inside the container, held only in memory, and never show up in `docker inspect` or an image layer. This project keeps the database root/user passwords and the WordPress admin password as secrets, and everything else — domain, DB name, WordPress title — as plain environment variables.
+```bash
+make clean
+```
 
-### Docker Network vs Host Network
-Host networking drops a container straight onto the host's own network stack: no isolation, and every port the container opens is a port opened on the host. This project instead defines its own bridge network in `docker-compose.yml`. Containers reach each other by service name over an internal DNS — `wordpress` resolves to the WordPress container from inside the network — and only NGINX's port 443 is actually published to the host. MariaDB and PHP-FPM are never reachable from outside the Docker network.
+---
 
-### Docker Volumes vs Bind Mounts
-A named Docker volume is created and managed by Docker itself, typically under `/var/lib/docker/volumes/`. A bind mount instead maps a specific, known folder on the host straight into the container. This project uses bind mounts — `~/data/wordpress` and `~/data/mariadb` — so the data sits in a predictable, inspectable location on the host rather than wherever Docker decides to put a volume, while behaving the same way otherwise: it survives `docker compose down` and container recreation, and disappears only if that folder is deleted.
+## Complete cleanup
 
-## Resources
+```bash
+make fclean
+```
 
-### Documentation & tutorials
-- [PHP packages — Sury APT repository](https://packages.sury.org/php/)
-- [WordPress Hosting Handbook — Server Environment](https://make.wordpress.org/hosting/handbook/server-environment/)
-- [Docker NGINX + WordPress + MariaDB Tutorial (Inception42) — DEV Community](https://dev.to/alejiri/docker-nginx-wordpress-mariadb-tutorial-inception42-1eok)
-- [WP-CLI — Installation guide](https://make.wordpress.org/cli/handbook/guides/installing/)
-- [WP-CLI — `wp core install`](https://developer.wordpress.org/cli/commands/core/install/)
-- [WP-CLI — `wp config`](https://developer.wordpress.org/cli/commands/config/)
-- [Inception walkthrough (YouTube)](https://www.youtube.com/watch?v=PrusdhS2lmo&t=25492s)
+---
 
-### AI usage
-- **Documentation** — Claude (Anthropic) helped draft and structure this README, `USER_DOC.md`, and `DEV_DOC.md`.
+# Design Choices
+
+## Debian Bullseye
+
+All containers are built from Debian Bullseye to comply with the project subject.
+
+---
+
+## Docker Secrets
+
+Passwords are never hardcoded inside Docker images or Docker Compose.
+
+Instead, sensitive information is stored inside Docker Secrets and read at runtime.
+
+Example:
+
+```
+/run/secrets/db_password
+```
+
+This avoids exposing passwords through container inspection or environment variables.
+
+---
+
+## Internal Docker Network
+
+MariaDB and WordPress communicate through an **internal bridge network**.
+
+This means they cannot be accessed directly from outside Docker.
+
+Only NGINX is connected to the public bridge network.
+
+---
+
+## Persistent Data
+
+Database files and WordPress files are stored on the host machine using bind-mounted Docker volumes.
+
+```
+/home/$USERNAME/data/mariadb_data
+
+/home/$USERNAME/data/wordpress_data
+```
+
+Containers can be recreated without losing website data.
+
+---
+
+## Automatic Initialization
+
+Every container starts with its own initialization script.
+
+### MariaDB
+
+* initializes the database
+* creates users
+* creates database
+* removes anonymous users
+
+### WordPress
+
+* waits for MariaDB
+* creates wp-config.php
+* installs WordPress
+* creates administrator
+* creates second user
+
+### NGINX
+
+* generates TLS certificate
+* starts NGINX in foreground
+
+---
+
+# Docker Concepts
+
+## Virtual Machines vs Docker
+
+| Virtual Machine                   | Docker                            |
+| --------------------------------- | --------------------------------- |
+| Includes a complete guest OS      | Shares the host kernel            |
+| Higher resource usage             | Lightweight                       |
+| Slower startup                    | Starts in seconds                 |
+| Larger disk usage                 | Smaller images                    |
+| Better for full OS virtualization | Better for application deployment |
+
+For this project Docker is the preferred choice because each service can run independently while sharing the same Linux kernel.
+
+---
+
+## Secrets vs Environment Variables
+
+### Environment Variables
+
+* Easy to configure
+* Visible inside container metadata
+* Better for non-sensitive configuration
+
+Examples:
+
+* database name
+* hostname
+* domain name
+
+### Docker Secrets
+
+* Designed for passwords
+* Mounted as files
+* More secure
+* Not baked into Docker images
+
+This project stores every password as a Docker Secret.
+
+---
+
+## Docker Network vs Host Network
+
+### Bridge Network
+
+* Containers communicate using Docker DNS.
+* Services remain isolated.
+* Only exposed ports are accessible.
+
+### Host Network
+
+* Shares the host network directly.
+* No isolation.
+* Greater security risks.
+
+This project uses Docker bridge networks to isolate services.
+
+---
+
+## Docker Volumes vs Bind Mounts
+
+### Docker Volume
+
+Managed entirely by Docker.
+
+Useful when Docker controls storage.
+
+### Bind Mount
+
+Maps a specific directory from the host into the container.
+
+This project uses local host directories through Docker volumes configured with bind mounts:
+
+```
+device: /home/$USERNAME/data/...
+```
+
+This allows data to persist even if containers are removed.
+
+---
+
+# Technologies
+
+* Docker
+* Docker Compose
+* Debian Bullseye
+* NGINX
+* MariaDB
+* WordPress
+* PHP-FPM
+* OpenSSL
+* WP-CLI
+* Bash
+
+---
+
+# Resources
+
+Official documentation
+
+* Docker Documentation
+* Docker Compose Documentation
+* Debian Documentation
+* NGINX Documentation
+* MariaDB Documentation
+* WordPress Documentation
+* WP-CLI Documentation
+
+Learning resources used during the project
+
+* https://packages.sury.org/php/
+* https://make.wordpress.org/hosting/handbook/server-environment/
+* https://dev.to/alejiri/docker-nginx-wordpress-mariadb-tutorial-inception42-1eok
+* https://make.wordpress.org/cli/handbook/guides/installing/
+* https://developer.wordpress.org/cli/commands/core/install/
+* https://developer.wordpress.org/cli/commands/config/
+* https://www.youtube.com/watch?v=PrusdhS2lmo
+
+---
+
+# AI Usage
+
+AI was used as a learning assistant throughout the project.
+
+It helped with:
+
+* understanding Docker concepts
+* debugging Docker Compose issues
+* learning networking
+* understanding Docker Secrets
+* reviewing Bash scripts
+* improving project documentation
+* explaining MariaDB initialization
+* explaining WordPress configuration
+* comparing Docker concepts
+
+All implementation decisions, debugging, testing, and final code were completed manually.
+
+---
+
+# Bonus
+
+The bonus part has not yet been implemented.
+
+It will be added before the final project submission.
+
+---
+
+# License
+
+This project was developed as part of the **42 Network** curriculum for educational purposes.
+
