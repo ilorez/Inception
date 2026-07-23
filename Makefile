@@ -33,8 +33,8 @@ clean_volumes:
 	sudo rm -rf /home/znajdaou/data/mariadb_data
 
 restart: stop start
-rebuild: fclean all
+re: fclean all
 
 
-.PHONY: all start stop clean fclean prepare restart rebuild up down clean_volumes
+.PHONY: all start stop clean fclean prepare restart re up down clean_volumes
 
