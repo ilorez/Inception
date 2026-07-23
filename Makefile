@@ -3,10 +3,16 @@ DOCKER_COMPOSE = docker compose -f srcs/docker-compose.yml
 all: prepare
 	$(DOCKER_COMPOSE) up -d
 
-start: prepare
-	$(DOCKER_COMPOSE) up -d
+start:
+	$(DOCKER_COMPOSE) start
 
 stop:
+	$(DOCKER_COMPOSE) stop
+
+up:
+	$(DOCKER_COMPOSE) up -d
+
+down:
 	$(DOCKER_COMPOSE) down
 
 # rm volumes & networks
@@ -21,6 +27,9 @@ prepare:
 	mkdir -p /home/znajdaou/data/wordpress_data
 	mkdir -p /home/znajdaou/data/mariadb_data
 
+restart: stop start
+rebuild: fclean all
 
-.PHONY: all start stop clean fclean prepare
+
+.PHONY: all start stop clean fclean prepare restart rebuild up down
 
