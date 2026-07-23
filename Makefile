@@ -20,12 +20,17 @@ clean:
 	$(DOCKER_COMPOSE) down -v
 
 # rm images, volumes & networks 
-fclean:
+fclean: clean_volumes
 	$(DOCKER_COMPOSE) down --rmi all -v
 
 prepare:
 	mkdir -p /home/znajdaou/data/wordpress_data
 	mkdir -p /home/znajdaou/data/mariadb_data
+
+# remove volumes folder
+clean_volumes:
+	sudo rm -rf /home/znajdaou/data/wordpress_data
+	sudo rm -rf /home/znajdaou/data/mariadb_data
 
 restart: stop start
 rebuild: fclean all
