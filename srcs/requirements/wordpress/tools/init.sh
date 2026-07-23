@@ -34,4 +34,15 @@ if ! wp core is-installed --path=/var/www/html --allow-root; then
         --prompt=admin_password < $WP_ADMIN_PASSWORD_FILE
 fi
 
+# second user
+if ! wp user get $WP_DB_USER --path=/var/www/html --allow-root > /dev/null 2>&1; then
+    wp user create \
+        $WP_DB_USER \
+        $WP_DB_EMAIL \
+        --role=author \
+        --user_pass=$(cat $WP_DB_PASSWORD_FILE) \
+        --path=/var/www/html \
+        --allow-root
+fi
+
 exec php-fpm8.4 -F
