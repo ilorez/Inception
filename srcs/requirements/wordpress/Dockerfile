@@ -42,6 +42,13 @@ RUN curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli
   mv wp-cli.phar /usr/local/bin/wp
 
 
+RUN mkdir -p /var/www/html/wp-content/plugins && \
+    curl -L https://downloads.wordpress.org/plugin/redis-cache.latest-stable.zip -o /tmp/redis-cache.zip && \
+    apt-get update && apt-get install -y unzip && \
+    unzip /tmp/redis-cache.zip -d /var/www/html/wp-content/plugins && \
+    rm -f /tmp/redis-cache.zip
+
+
 
 # Configure PHP-FPM to listen on port 9000 instead of the default Unix socket
 RUN sed -i 's|listen = /run/php/php8.4-fpm.sock|listen = 0.0.0.0:9000|' /etc/php/8.4/fpm/pool.d/www.conf

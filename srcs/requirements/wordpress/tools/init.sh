@@ -43,9 +43,9 @@ until php -r "exit(@fsockopen('$REDIS_HOST', 6379) ? 0 : 1);" 2>/dev/null; do
     sleep 1
 done
 
-if ! wp plugin is-installed redis-cache --allow-root --path=/var/www/html; then
-    wp plugin install redis-cache --activate --allow-root --path=/var/www/html
-fi
+# if ! wp plugin is-installed redis-cache --allow-root --path=/var/www/html; then
+#     wp plugin install redis-cache --activate --allow-root --path=/var/www/html
+# fi
 
 if ! wp plugin is-active redis-cache --allow-root --path=/var/www/html; then
     wp plugin activate redis-cache --allow-root --path=/var/www/html
