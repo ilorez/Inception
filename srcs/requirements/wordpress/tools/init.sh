@@ -14,25 +14,47 @@ done
 # Create wp-config.php only if missing
 if [ ! -f /var/www/html/wp-config.php ]; then
     wp config create \
-        --dbname=$MYSQL_DATABASE \
-        --dbuser=$MYSQL_USER \
-        --dbhost=$WP_DB_HOST \
-        --path=/var/www/html \
+        --dbname="$MYSQL_DATABASE" \
+        --dbuser="$MYSQL_USER" \
+        --dbhost="$WP_DB_HOST" \
+        --path="/var/www/html" \
         --allow-root \
-        --prompt=dbpass < $MYSQL_PASSWORD_FILE
+        --prompt=dbpass < "$MYSQL_PASSWORD_FILE"
+    # Configure Redis cache
+    wp config set WP_REDIS_HOST "$REDIS_HOST" --allow-root
+    wp config set WP_REDIS_PORT 6379 --raw --allow-root
+    wp config set WP_CACHE true --raw --allow-root
 fi
 
 # Install only if not already installed
 if ! wp core is-installed --path=/var/www/html --allow-root; then
     wp core install \
         --url=$DOMAIN_NAME \
-        --title="Inception" \
+        --title="$WP_TITLE" \
         --admin_user=$WP_ADMIN_USER \
         --admin_email=$WP_ADMIN_EMAIL \
         --path=/var/www/html \
         --allow-root \
         --prompt=admin_password < $WP_ADMIN_PASSWORD_FILE
 fi
+
+until php -r "exit(@fsockopen('$REDIS_HOST', 6379) ? 0 : 1);" 2>/dev/null; do
+    echo "waiting for redis..."
+    sleep 1
+done
+
+if ! wp plugin is-installed redis-cache --allow-root --path=/var/www/html; then
+    wp plugin install redis-cache --activate --allow-root --path=/var/www/html
+fi
+
+if ! wp plugin is-active redis-cache --allow-root --path=/var/www/html; then
+    wp plugin activate redis-cache --allow-root --path=/var/www/html
+fi
+
+if [ ! -f /var/www/html/wp-content/object-cache.php ]; then
+    wp redis enable --allow-root --path=/var/www/html
+fi
+
 
 # second user
 if ! wp user get $WP_DB_USER --path=/var/www/html --allow-root > /dev/null 2>&1; then

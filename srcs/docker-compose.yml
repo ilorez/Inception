@@ -31,6 +31,7 @@ services:
         required: true # default
     depends_on:
       - mariadb
+      - redis
   nginx:
     hostname: nginx
     build: ./requirements/nginx
@@ -48,6 +49,15 @@ services:
       - wordpress_data:/var/www/html
     depends_on:
       - wordpress
+  # bonus
+  redis:
+    hostname: redis
+    build: ./requirements/bonus/redis
+    container_name: redis
+    restart: always
+    networks:
+      - wp_network
+
 
 networks:
   wp_network:
@@ -70,6 +80,7 @@ volumes:
       type: none
       device: /home/$USERNAME/data/wordpress_data
       o: bind
+  # bonus
 
 secrets:
   db_root_password:

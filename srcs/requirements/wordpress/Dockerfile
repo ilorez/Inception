@@ -15,6 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certifi
     php8.4-mbstring \
     php8.4-zip \
     php8.4-exif \
+    php8.4-redis \
     && ln -sf /usr/bin/php8.4 /usr/bin/php \
     && rm -rf /var/lib/apt/lists/*
 
