@@ -1,5 +1,6 @@
 services:
   mariadb:
+    image: mariadb
     hostname: mariadb
     secrets:
       - db_root_password
@@ -15,6 +16,7 @@ services:
       - wp_network
     restart: always
   wordpress:
+    image: wordpress
     hostname: wordpress
     secrets:
       - db_root_password
@@ -41,6 +43,7 @@ services:
   nginx:
     hostname: nginx
     build: ./requirements/nginx
+    image: nginx
     container_name: nginx
     env_file:
       - path: ./.env
@@ -57,6 +60,7 @@ services:
       - wordpress
   # bonus
   redis:
+    image: redis
     hostname: redis
     build: ./requirements/bonus/redis
     container_name: redis
@@ -64,6 +68,7 @@ services:
     networks:
       - wp_network
   ftp_server:
+    image: ftp_server
     hostname: ftp_server
     build: ./requirements/bonus/ftp_server
     container_name: ftp_server
@@ -75,7 +80,6 @@ services:
     depends_on:
       wordpress:
         condition: service_healthy
-
     volumes:
       - wordpress_data:$FTP_HOME_DIR
     restart: always
@@ -85,6 +89,7 @@ services:
       - "21:21"
       - "30000-30009:30000-30009"
   static_page:
+    image: static_page
     hostname: static_page
     build: ./requirements/bonus/static_page
     container_name: static_page

@@ -1,6 +1,6 @@
 FROM debian:bullseye
 
-RUN apt-get update && apt-get install -y vsftpd && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y vsftpd tini && rm -rf /var/lib/apt/lists/*
 
 COPY ./conf/vsftpd.conf /etc/vsftpd.conf
 
@@ -9,4 +9,5 @@ RUN chmod +x /init.sh
 
 # EXPOSE 21 30000-30009
 
-ENTRYPOINT ["/init.sh"]
+ENTRYPOINT ["/usr/bin/tini", "--"]
+CMD ["/init.sh"]

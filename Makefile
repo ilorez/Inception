@@ -1,7 +1,7 @@
 DOCKER_COMPOSE = docker compose -f srcs/docker-compose.yml
 
 all: prepare
-	$(DOCKER_COMPOSE) up
+	$(DOCKER_COMPOSE) up --build -d
 
 start:
 	$(DOCKER_COMPOSE) start
@@ -9,8 +9,8 @@ start:
 stop:
 	$(DOCKER_COMPOSE) stop
 
-up:
-	$(DOCKER_COMPOSE) up -d
+up: prepare
+	$(DOCKER_COMPOSE) up --build -d
 
 down:
 	$(DOCKER_COMPOSE) down
