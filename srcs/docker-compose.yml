@@ -101,6 +101,16 @@ services:
     restart: always
     depends_on:
       - nginx
+  adminer:
+    image: adminer
+    hostname: adminer
+    build: ./requirements/bonus/adminer
+    container_name: adminer
+    restart: always
+    depends_on:
+      - mariadb
+    networks:
+      - wp_network
 
 networks:
   wp_network:
