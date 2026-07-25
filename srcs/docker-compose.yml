@@ -32,6 +32,12 @@ services:
     depends_on:
       - mariadb
       - redis
+    healthcheck:
+      test: ["CMD", "test", "-f", "/var/www/html/wp-config.php"]
+      interval: 3s
+      timeout: 2s
+      retries: 10
+      start_period: 5s
   nginx:
     hostname: nginx
     build: ./requirements/nginx
@@ -57,7 +63,27 @@ services:
     restart: always
     networks:
       - wp_network
+  ftp_server:
+    hostname: ftp_server
+    build: ./requirements/bonus/ftp_server
+    container_name: ftp_server
+    env_file:
+      - path: ./.env
+        required: true
+    secrets:
+      - ftp_password
+    depends_on:
+      wordpress:
+        condition: service_healthy
 
+    volumes:
+      - wordpress_data:$FTP_HOME_DIR
+    restart: always
+    networks:
+      - bridge
+    ports:
+      - "21:21"
+      - "30000-30009:30000-30009"
 
 networks:
   wp_network:
@@ -87,3 +113,5 @@ secrets:
     file: ../secrets/db_root_password.txt
   db_password:
     file: ../secrets/db_password.txt
+  ftp_password:
+    file: ../secrets/ftp_password.txt

@@ -13,7 +13,7 @@ done
 
 # Create wp-config.php only if missing
 if [ ! -f /var/www/html/wp-config.php ]; then
-    echo -e "\033[31mCreating wp-config.php...\033[0m"
+    echo "Creating wp-config.php..."
     wp config create \
         --dbname="$MYSQL_DATABASE" \
         --dbuser="$MYSQL_USER" \
