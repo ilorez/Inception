@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certifi
     php8.4-zip \
     php8.4-exif \
     php8.4-redis \
+    unzip \
     && ln -sf /usr/bin/php8.4 /usr/bin/php \
     && rm -rf /var/lib/apt/lists/*
 
@@ -33,7 +34,7 @@ RUN mkdir -p /var/www/html && \
     curl -o /tmp/latest.tar.gz https://wordpress.org/latest.tar.gz && \
     tar -xzf /tmp/latest.tar.gz -C /var/www/ && \
     mv /var/www/wordpress/* /var/www/html/ && \
-    rm -rf /tmp/latest.tar.gz
+    rm -rf  /var/www/wordpress /tmp/latest.tar.gz
 
 
 # Download WP-CLI
@@ -44,7 +45,6 @@ RUN curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli
 
 RUN mkdir -p /var/www/html/wp-content/plugins && \
     curl -L https://downloads.wordpress.org/plugin/redis-cache.latest-stable.zip -o /tmp/redis-cache.zip && \
-    apt-get update && apt-get install -y unzip && \
     unzip /tmp/redis-cache.zip -d /var/www/html/wp-content/plugins && \
     rm -f /tmp/redis-cache.zip
 

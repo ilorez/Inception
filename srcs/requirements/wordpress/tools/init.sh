@@ -13,6 +13,7 @@ done
 
 # Create wp-config.php only if missing
 if [ ! -f /var/www/html/wp-config.php ]; then
+    echo -e "\033[31mCreating wp-config.php...\033[0m"
     wp config create \
         --dbname="$MYSQL_DATABASE" \
         --dbuser="$MYSQL_USER" \
@@ -21,9 +22,9 @@ if [ ! -f /var/www/html/wp-config.php ]; then
         --allow-root \
         --prompt=dbpass < "$MYSQL_PASSWORD_FILE"
     # Configure Redis cache
-    wp config set WP_REDIS_HOST "$REDIS_HOST" --allow-root
-    wp config set WP_REDIS_PORT 6379 --raw --allow-root
-    wp config set WP_CACHE true --raw --allow-root
+    wp config set WP_REDIS_HOST "$REDIS_HOST" --allow-root --path=/var/www/html
+    wp config set WP_REDIS_PORT 6379 --raw --allow-root --path=/var/www/html
+    wp config set WP_CACHE true --raw --allow-root --path=/var/www/html
 fi
 
 # Install only if not already installed
