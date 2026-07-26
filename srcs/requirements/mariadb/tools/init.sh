@@ -22,6 +22,15 @@ else
     exit 1
 fi
 
+if [ -n "$UPTIME_KUMA_DB_PASSWORD_FILE" ] && [ -f "$UPTIME_KUMA_DB_PASSWORD_FILE" ]; then
+    UPTIME_KUMA_DB_PASSWORD=$(cat "$UPTIME_KUMA_DB_PASSWORD_FILE")
+else
+    echo "Error: UPTIME_KUMA_DB_PASSWORD_FILE=$UPTIME_KUMA_DB_PASSWORD_FILE is not set or the file does not exist."
+    exit 1
+fi
+
+
+
 # Check if the MariaDB data directory is empty (i.e., not initialized)
 if [ ! -d "/var/lib/mysql/mysql" ]; then
     echo "Initializing MariaDB data directory..."
@@ -45,7 +54,14 @@ DROP USER IF EXISTS ''@'${HOSTNAME}';
 DROP USER IF EXISTS ''@localhost;
 FLUSH PRIVILEGES;
 EOF
-
+    # create uptime kuma database and user
+    mysql -u root -p"${MYSQL_ROOT_PASSWORD}" <<EOF
+CREATE DATABASE IF NOT EXISTS \`${UPTIME_KUMA_DB_NAME}\`;
+CREATE USER IF NOT EXISTS '${UPTIME_KUMA_DB_USERNAME}'@'%' IDENTIFIED BY '${UPTIME_KUMA_DB_PASSWORD}';
+GRANT ALL PRIVILEGES ON \`${UPTIME_KUMA_DB_NAME}\`.* TO '${UPTIME_KUMA_DB_USERNAME}'@'%';
+FLUSH PRIVILEGES;
+EOF
+    
 
     # stop mariadb server
     mysqladmin -u root -p"${MYSQL_ROOT_PASSWORD}" shutdown

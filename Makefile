@@ -33,6 +33,7 @@ clean_volumes:
 
 restart: stop start
 re: fclean all
+rebuild: down up
 
 
 .PHONY: all start stop clean fclean prepare restart re up down clean_volumes

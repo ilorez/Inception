@@ -5,6 +5,7 @@ services:
     secrets:
       - db_root_password
       - db_password
+      - kuma_db_password
     build: ./requirements/mariadb
     container_name: mariadb
     env_file:
@@ -35,7 +36,7 @@ services:
       - mariadb
       - redis
     healthcheck:
-      test: ["CMD", "test", "-f", "/var/www/html/wp-config.php"]
+      test: [ "CMD", "test", "-f", "/var/www/html/wp-config.php" ]
       interval: 3s
       timeout: 2s
       retries: 10
@@ -51,8 +52,10 @@ services:
     ports:
       - "443:443"
     networks:
-      - wp_network
-      - bridge
+      wp_network:
+        aliases:
+          - ${DOMAIN_NAME}
+      bridge: {}
     restart: always
     volumes:
       - wordpress_data:/var/www/html
@@ -111,6 +114,16 @@ services:
       - mariadb
     networks:
       - wp_network
+  uptime_kuma:
+    image: uptime_kuma
+    hostname: uptime_kuma
+    build: ./requirements/bonus/uptime_kuma
+    container_name: uptime_kuma
+    restart: always
+    networks:
+      - wp_network
+    depends_on:
+      - nginx
 
 networks:
   wp_network:
@@ -142,3 +155,5 @@ secrets:
     file: ../secrets/db_password.txt
   ftp_password:
     file: ../secrets/ftp_password.txt
+  kuma_db_password:
+    file: ../secrets/kuma_db_password.txt
