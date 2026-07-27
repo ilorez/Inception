@@ -1,2 +1,2 @@
 # ignore credentials folder
-secrets/
+./secrets/
