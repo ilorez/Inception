@@ -1,363 +1,151 @@
-# User Documentation
+# User Documentation – Inception Project
 
-This document explains how to use the Inception project after cloning the repository.
+This document explains how an administrator or end user can work with the Inception infrastructure.
 
----
+## Services Provided
+The stack runs the following services, each in its own Docker container:
 
-# Services
+| Service       | Purpose                                                      |
+|---------------|--------------------------------------------------------------|
+| **NGINX**     | HTTPS reverse proxy – the only public entry point (port 443) |
+| **WordPress** | The content management system (PHP-FPM, no own web server)   |
+| **MariaDB**   | Database for WordPress                                       |
+| **Redis**     | In‑memory cache to speed up WordPress (bonus)                |
+| **FTP server**| vsftpd – provides file access to the WordPress website files |
+| **Adminer**   | Web‑based database manager (bonus)                           |
+| **Uptime Kuma** | Monitoring tool for the stack (bonus)                       |
+| **Static page** | A simple resume/portfolio site (bonus)                     |
 
-The project deploys three services:
+All services are containerized and connected through Docker networks.
 
-| Service       | Description                                          |
-| ------------- | ---------------------------------------------------- |
-| **NGINX**     | Reverse proxy that serves the website over HTTPS     |
-| **WordPress** | Content Management System (CMS) running with PHP-FPM |
-| **MariaDB**   | Database used by WordPress                           |
+## Starting and Stopping the Project
+Use the `Makefile` at the root of the repository.
 
----
+- **Start everything for the first time (build + run):**
+  ```
+  make
+  ```
+  or
+  ```
+  make up
+  ```
+  This builds the Docker images and starts all containers. The first run may take a minute while the database and WordPress are initialized.
 
-# Requirements
+- **Start previously stopped containers:**
+  ```
+  make start
+  ```
 
-Before starting the project, make sure you have:
+- **Stop all running containers:**
+  ```
+  make stop
+  ```
 
-* Docker installed
-* Docker Compose installed
-* GNU Make installed
+- **Stop and remove containers (volumes preserved):**
+  ```
+  make down
+  ```
 
----
+- **Full cleanup (containers, volumes, images, data folders):**
+  ```
+  make fclean
+  ```
 
-# First Setup
+> **Note:** The data folders `/home/znajdaou/data/wordpress_data` and `/home/znajdaou/data/mariadb_data` are created automatically by `make up`. They persist even after `make down`. Use `make fclean` only if you want to delete all data.
 
-## 1. Clone the repository
+## Accessing the Website and Administration Panel
 
-```bash
-git clone <repository_url>
-cd inception
+### WordPress
+- **Website:** [https://znajdaou.42.fr](https://znajdaou.42.fr)  
+  (accept the self‑signed certificate warning)
+- **Administrator login:**
+  - Username: `superuser`
+  - Password: stored in `secrets/db_root_password.txt` (see below)
+
+- **Second user (Author role):**
+  - Username: `znajdaou`
+  - Password: stored in `secrets/db_password.txt`
+
+You can manage WordPress (write posts, install themes, etc.) from the admin panel at:
+`https://znajdaou.42.fr/wp-admin`
+
+### Adminer (Database Manager)
+- **URL:** [https://adminer.znajdaou.42.fr](https://adminer.znajdaou.42.fr)
+- **Connection details:**
+  - System: MySQL
+  - Server: `mariadb`
+  - Username: `znajdaou`
+  - Password: stored in `secrets/db_password.txt`
+
+### Uptime Kuma (Monitoring)
+- **URL:** [https://kuma.znajdaou.42.fr](https://kuma.znajdaou.42.fr)
+  On first visit you will be prompted to create an admin account.
+
+### Static Website
+- **URL:** [https://static.znajdaou.42.fr](https://static.znajdaou.42.fr)  
+  Displays a personal resume page.
+
+### FTP Server
+- **Host:** `znajdaou.42.fr`
+- **Port:** 21 (passive ports 30000–30009)
+- **Username:** `ftpuser`
+- **Password:** stored in `secrets/ftp_password.txt`
+- The FTP server points directly to the WordPress website files (the `/var/www/html` volume). Use it to upload or manage files.
+
+## Credentials – Where to Find and Manage Them
+
+All passwords are stored in the `secrets/` directory (outside the `srcs/` folder):
+
+| File                       | Purpose                                    |
+|----------------------------|--------------------------------------------|
+| `secrets/db_root_password.txt`  | MariaDB root password, WordPress admin password |
+| `secrets/db_password.txt`       | MariaDB user password, second WordPress user password |
+| `secrets/ftp_password.txt`      | FTP server password                         |
+| `secrets/kuma_db_password.txt`  | Database password for Uptime Kuma           |
+
+### Changing Credentials
+1. Edit the corresponding file (e.g., `db_password.txt`).
+2. Run `make re` to fully rebuild the project with the new passwords.  
+   ⚠️ **Important:** Changing passwords after the database has been initialized will break existing WordPress logins unless you also update the database. For a fresh start, use `make fclean` first.
+
+> **Security note:** These files are **not** pushed to the Git repository (they are ignored via `.gitignore`). They are mounted into containers as Docker secrets, never appearing in Dockerfiles or environment variables directly.
+
+## Checking That Services Are Running Correctly
+
+### Quick Check (Docker)
 ```
-
----
-
-## 2. Create the secret files
-
-Inside the `secrets/` directory create the required password files.
-
-```
-secrets/
-├── db_password.txt
-└── db_root_password.txt
-```
-
-Example:
-
-```text
-db_password.txt
-----------------
-your_database_password
-
-db_root_password.txt
---------------------
-your_root_password
-```
-
----
-
-## 3. Configure the environment
-
-Edit:
-
-```text
-srcs/.env
-```
-
-Configure the values that match your environment.
-
-Important variables include:
-
-* database name
-* database user
-* WordPress administrator
-* domain name
-* username
-
-Passwords are **not** stored inside this file.
-
----
-
-# Starting the Project
-
-Build and start all containers:
-
-```bash
-make
-```
-
-The first build may take several minutes because Docker must build every image.
-
----
-
-# Opening the Website
-
-After the containers start successfully, open:
-
-```
-https://<DOMAIN_NAME>
-```
-
-Example:
-
-```
-https://znajdaou.42.fr
-```
-
-Because the project generates a self-signed certificate, your browser will display a security warning.
-
-This is expected.
-
-Choose **Advanced → Continue** to access the website.
-
----
-
-# WordPress Administration
-
-Open:
-
-```
-https://<DOMAIN_NAME>/wp-admin
-```
-
-Log in using the administrator credentials configured in the `.env` file.
-
-Example:
-
-```
-Username:
-superuser
-
-Password:
-(read from db_root_password.txt)
-```
-
----
-
-# WordPress Users
-
-The initialization script automatically creates:
-
-* one administrator
-* one author user
-
-The author account can create and manage posts but has limited administrative permissions.
-
----
-
-# Stopping the Project
-
-Stop all running containers:
-
-```bash
-make stop
-```
-
----
-
-# Starting Existing Containers
-
-```bash
-make start
-```
-
----
-
-# Restarting Everything
-
-```bash
-make restart
-```
-
----
-
-# Removing Containers
-
-```bash
-make down
-```
-
-This removes the containers but keeps all persistent data.
-
----
-
-# Cleaning Volumes
-
-To remove containers and persistent data:
-
-```bash
-make clean
-```
-
-To completely remove containers, images, networks, and volumes:
-
-```bash
-make fclean
-```
-
-> **Warning:** This permanently deletes the WordPress files and database.
-
----
-
-# Credentials
-
-Passwords are stored using **Docker Secrets**.
-
-Secret files:
-
-```
-secrets/
-├── db_password.txt
-└── db_root_password.txt
-```
-
-Other configuration values are stored in:
-
-```
-srcs/.env
-```
-
----
-
-# Checking Running Services
-
-Show running containers:
-
-```bash
 docker ps
 ```
+All containers should show `Up` status. The important ones are `nginx`, `wordpress`, `mariadb`, `redis`, `adminer`, `uptime_kuma`, `ftp_server`, and `static_page`.
 
-You should see:
-
-* nginx
-* wordpress
-* mariadb
-
----
-
-# Viewing Logs
-
-NGINX
-
-```bash
+### View Logs
+```
 docker logs nginx
-```
-
-WordPress
-
-```bash
 docker logs wordpress
-```
-
-MariaDB
-
-```bash
 docker logs mariadb
 ```
+Replace with other container names as needed. Use `docker logs -f <name>` to follow the log output.
 
----
+### Test Web Services
+- Open the WordPress site in a browser. If it loads and you can log in, the stack is healthy.
+- Use `curl` on the server:
+  ```
+  curl -k https://znajdaou.42.fr
+  ```
+  (the `-k` flag ignores the self‑signed certificate)
+- Check Adminer or Uptime Kuma in the browser similarly.
 
-# Verifying the Website
-
-To verify that the stack is working correctly:
-
-* All containers are running.
-* The website opens over HTTPS.
-* The WordPress installation page does not appear.
-* You can log into `/wp-admin`.
-* Posts can be created successfully.
-* Data remains after restarting the containers.
-
----
-
-# Persistent Data
-
-The project stores data outside the containers.
-
-WordPress files:
-
+### Inside Containers
+You can also check internal processes:
 ```
-/home/<USERNAME>/data/wordpress_data
+docker exec mariadb mysqladmin -u root -p<password> status
 ```
+(but normally Docker’s health checks handle this automatically – failing containers are restarted).
 
-MariaDB database:
+## Additional Notes
+- The infrastructure uses **only HTTPS** (TLS 1.2/1.3). All HTTP traffic is forwarded or rejected.
+- Containers are configured to **restart automatically** if they crash.
+- The data directories on the host are located at `/home/znajdaou/data/`. Backup these directories to preserve your database and website files.
+- If you need to add custom domains, modify the `.env` file and the `/etc/hosts` file, then rebuild.
 
-```
-/home/<USERNAME>/data/mariadb_data
-```
-
-Because these directories are mounted into Docker volumes, removing containers does **not** delete your website or database.
-
----
-
-# Common Problems
-
-## Website does not open
-
-Check that NGINX is running:
-
-```bash
-docker ps
-```
-
----
-
-## WordPress cannot connect to the database
-
-Verify that the MariaDB container is running.
-
-Then check its logs:
-
-```bash
-docker logs mariadb
-```
-
----
-
-## Browser reports an insecure connection
-
-This is expected because the project uses a self-signed TLS certificate generated during container startup.
-
----
-
-## Password does not work
-
-Verify the contents of:
-
-```
-secrets/db_password.txt
-secrets/db_root_password.txt
-```
-
-If the database has already been initialized, changing the secret files alone will not update existing passwords. Remove the persistent database volume and rebuild the project if you want to recreate the database with new credentials.
-
----
-
-# Useful Commands
-
-```bash
-make            # Build and start the project
-
-make stop       # Stop containers
-
-make start      # Start containers
-
-make restart    # Restart containers
-
-make down       # Remove containers
-
-make clean      # Remove containers and volumes
-
-make fclean     # Full cleanup
-
-docker ps       # Running containers
-
-docker logs <container>
-
-docker exec -it <container> bash
-```
+For further technical details, refer to the `README.md` or the developer documentation (`DEV_DOC.md`).
