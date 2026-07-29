@@ -110,6 +110,8 @@ All images are built from Debian Bullseye using hand‑written Dockerfiles; no p
 | `make clean`     | Remove containers + volumes |
 | `make fclean`    | Remove containers, volumes, and images |
 | `make re`        | Full rebuild from scratch |
+| `make rebuild` | Rebuild images without removing volumes |
+| `make logs` | Show logs of all containers |
 
 ## Resources
 

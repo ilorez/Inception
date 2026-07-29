@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+# update address of pasv_address in vsftpd.conf to $HOST_IP_ADDRESS
+sed -i "s|^pasv_address=.*|pasv_address=$HOST_IP_ADDRESS|" /etc/vsftpd.conf
+
 FTP_PASS=$(cat /run/secrets/ftp_password)
 
 # if user already exists, do not create it again

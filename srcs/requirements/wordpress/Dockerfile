@@ -57,6 +57,6 @@ COPY tools/init.sh /init.sh
 RUN chmod +x /init.sh
 
 # in case of using docker-compose, and network wp_network bridge internal, the port 9000 is not needed to be exposed, but if you want to run the container directly, you need to expose it to access it from outside the container
-EXPOSE 9000
+# EXPOSE 9000
 
 ENTRYPOINT ["/init.sh"]

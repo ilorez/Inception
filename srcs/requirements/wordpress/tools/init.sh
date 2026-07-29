@@ -23,7 +23,7 @@ if [ ! -f /var/www/html/wp-config.php ]; then
         --prompt=dbpass < "$MYSQL_PASSWORD_FILE"
     # Configure Redis cache
     wp config set WP_REDIS_HOST "$REDIS_HOST" --allow-root --path=/var/www/html
-    wp config set WP_REDIS_PORT 6379 --raw --allow-root --path=/var/www/html
+    wp config set WP_REDIS_PORT "$REDIS_PORT" --raw --allow-root --path=/var/www/html
     wp config set WP_CACHE true --raw --allow-root --path=/var/www/html
 fi
 
@@ -39,7 +39,7 @@ if ! wp core is-installed --path=/var/www/html --allow-root; then
         --prompt=admin_password < $WP_ADMIN_PASSWORD_FILE
 fi
 
-until php -r "exit(@fsockopen('$REDIS_HOST', 6379) ? 0 : 1);" 2>/dev/null; do
+until php -r "exit(@fsockopen('$REDIS_HOST', $REDIS_PORT) ? 0 : 1);" 2>/dev/null; do
     echo "waiting for redis..."
     sleep 1
 done
